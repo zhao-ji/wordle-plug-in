@@ -23,6 +23,15 @@ def apply_logging():
     local_log.push_application()
 
 
+def apply_query(query_str, xargs):
+    with closing(sqlite3.connect("google-words.db")) as con, \
+            con, \
+            closing(con.cursor()) as cursor:
+        cursor.execute(query_str, xargs)
+        results = cursor.fetchall()
+        return [item[0] for item in results]
+
+
 def forge_query(length, correct, present, negation_str):
     """
     PARAMETERS:
@@ -40,7 +49,7 @@ def forge_query(length, correct, present, negation_str):
         select word from words where
             count = 5
             and word not glob '*[e]*'
-            and instr(word, 'h') = 1
+            and substr(word, 1, 1) = 'h'
             and instr(word, 'l') in (3, 5)
             and substr(word, 4, 1) != 'l' and substr(word, 2, 1) != 'l'
             limit 30;
@@ -53,7 +62,7 @@ def forge_query(length, correct, present, negation_str):
     if negation_str:
         query_str += " and word not glob '*[{}]*'".format(negation_str)
     for k, v in correct.items():
-        query_str += " and instr(word, '{}') = {}".format(v, k)
+        query_str += " and substr(word, {}, 1) = '{}'".format(k, v)
         certain_positions.add(k)
     for k, v in present.items():
         possible_positions = list(set(
@@ -69,15 +78,6 @@ def forge_query(length, correct, present, negation_str):
             query_str += " and substr(word, {}, 1) != '{}'".format(item, k)
     query_str += " limit 30;"
     return query_str
-
-
-def apply_query(query_str, xargs):
-    with closing(sqlite3.connect("google-words.db")) as con, \
-            con, \
-            closing(con.cursor()) as cursor:
-        cursor.execute(query_str, xargs)
-        results = cursor.fetchall()
-        return [item[0] for item in results]
 
 
 def apply_cache(cache, correct, present):
