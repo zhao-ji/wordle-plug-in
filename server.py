@@ -2,7 +2,6 @@
 # coding: utf-8
 
 from contextlib import closing
-from pprint import pprint
 
 from flask import Flask, request, jsonify
 from flask_api import status
@@ -53,7 +52,8 @@ def easy_search():
     query = request.args.get("q", "")
     length = int(request.args.get("l", 0))
     ip = request.headers.get("X-Real-IP", "")
-    logbook.info(" {}, length: {}, query: {} ".format(ip, length, query.encode("utf-8")))
+    logbook.info(" {}, length: {}, query: {} ".format(
+        ip, length, query.encode("utf-8")))
     if not query or not length:
         return jsonify(['their', 'could', 'among'])
     return jsonify(easy_find_words(length, query))
@@ -71,7 +71,8 @@ def find_words(length, history):
 def apply_cache(cache, correct, present):
     if "-" in cache:
         choice = cache.pop(0)
-        positions = list(map(int, filter(lambda i: i, "".join(cache).split("-"))))
+        positions = list(
+            map(int, filter(lambda i: i, "".join(cache).split("-"))))
         present.setdefault(choice, []).extend(positions)
     elif len(cache) == 2:
         correct[int(cache[1])] = cache[0]
@@ -90,7 +91,8 @@ def easy_find_words(length, query):
 
     query := a3d-2*bcr
         correct := instr(word, 'a') = 3
-        present := and instr(word, 'd') in (1,4,5) and instr(word, 'd') not in (2, 3)
+        present := and instr(word, 'd') in (1,4,5)
+            and instr(word, 'd') not in (2, 3)
         absent := and word not glob '*[bcr]*'
     """
     negation_sign = None
@@ -102,6 +104,8 @@ def easy_find_words(length, query):
         negation_sign = "/"
     elif "|" in query:
         negation_sign = "|"
+    elif "_" in query:
+        negation_sign = "_"
 
     negation_str = None
     choice_str = query
@@ -134,18 +138,18 @@ def easy_find_words(length, query):
             range(1, length + 1)
         ) - certain_positions - set(v))
         impossible_positions = list(certain_positions | set(v))
-        if len(possible_positions) == 1: 
+        if len(possible_positions) == 1:
             query_str += " and instr(word, '{}') = {}".format(
                 k, possible_positions[0])
         elif len(possible_positions) > 1:
             query_str += " and instr(word, '{}') in {}".format(
                 k, str(tuple(possible_positions)))
-        if len(impossible_positions) == 0: 
+        if len(impossible_positions) == 0:
             pass
-        elif len(impossible_positions) == 1: 
+        elif len(impossible_positions) == 1:
             query_str += " and instr(word, '{}') != {}".format(
                 k, impossible_positions[0])
-        if len(impossible_positions) > 1: 
+        if len(impossible_positions) > 1:
             query_str += " and instr(word, '{}') not in {}".format(
                 k, str(tuple(impossible_positions)))
     query_str += " limit 30;"
