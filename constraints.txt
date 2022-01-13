@@ -1,0 +1,3 @@
+Flask==2.0.2
+Flask-API==3.0.post1
+Logbook==1.5.3
