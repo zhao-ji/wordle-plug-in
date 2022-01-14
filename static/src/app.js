@@ -5,26 +5,8 @@ import { Suggestions, History, KeyBoard } from "./components";
 export default class App extends Component {
     state = {
         length: 5,
-        history: [
-            [
-                {'char': 'a', 'status': 'correct'},
-                {'char': 'p', 'status': 'correct'},
-                {'char': 'l', 'status': 'present'},
-                {'char': 'b', 'status': 'absent'},
-                {'char': 'd', 'status': 'absent'},
-            ],
-            [
-                {'char': 'b', 'status': 'absent'},
-                {'char': 'c', 'status': 'absent'},
-                {'char': 'l', 'status': 'present'},
-                {'char': 'e', 'status': 'absent'},
-                {'char': 'f', 'status': 'absent'},
-            ],
-        ],
-    }
-
-    constructor(props) {
-        super(props);
+        history: [],
+        input: [],
     }
 
     acceptSuggestion = (word) => {
@@ -36,15 +18,74 @@ export default class App extends Component {
         }));
     }
 
+    onTileFlip = (wordIndex, characterIndex, characterStatus) => {
+        const statusSwitch = {
+            "absent": "present",
+            "present": "correct",
+            "correct": "absent",
+        };
+        this.setState((prevState, props) => {
+            const oldHistory = JSON.parse(JSON.stringify(prevState.history));
+            oldHistory[wordIndex][characterIndex].status = statusSwitch[characterStatus];
+            return { history: oldHistory };
+        });
+    }
+
+    onWordRemove = (wordIndex) => {
+        this.setState((prevState, props) => {
+            const oldHistory = JSON.parse(JSON.stringify(prevState.history));
+            oldHistory.pop(wordIndex);
+            return { history: oldHistory };
+        });
+    }
+
+    onInputUpdate = (text) => {
+        this.setState((prevState, props) => ({
+            input: [...prevState.input, text],
+        }));
+    }
+
+    onInputBackSpace = () => {
+        if (!this.state.input.length) return;
+        this.setState((prevState, props) => {
+            const newInput = prevState.input.slice(0, prevState.input.length - 1);
+            console.log(newInput)
+            return {input: newInput};
+        });
+    }
+
+    onInputConfirm = () => {
+        this.setState((prevState, props) => ({
+            history: [
+                ...prevState.history,
+                prevState.input.map(item => ({'char': item, 'status': 'absent'}))
+            ],
+            input: [],
+        }));
+    }
+
     render() {
         return (
             <div className="App">
                 <header className="App-header">
                     Wordle Plug In
                 </header>
-                <Suggestions {...this.state} acceptSuggestion={this.acceptSuggestion} />
-                <History {...this.state} />
-                <KeyBoard {...this.state} />
+                <Suggestions
+                    acceptSuggestion={this.acceptSuggestion}
+                    {...this.state}
+                />
+                <History
+                    onTileFlip={this.onTileFlip}
+                    onWordRemove={this.onWordRemove}
+                    input={this.state.input}
+                    {...this.state}
+                />
+                <KeyBoard
+                    onInputUpdate={this.onInputUpdate}
+                    onInputConfirm={this.onInputConfirm}
+                    onInputBackSpace={this.onInputBackSpace}
+                    {...this.state}
+                />
             </div>
         );
     }

@@ -33,7 +33,7 @@ export class Suggestions extends Component {
     componentDidUpdate(prevProps) {
         const {length, history} = prevProps;
         const {length: _length, history: _history} = this.props;
-        if (length !== _length || history.length !== _history.length) {
+        if (length !== _length || JSON.stringify(history) !== JSON.stringify(_history)) {
             this.updateSuggestions();
         }
     }
@@ -42,17 +42,6 @@ export class Suggestions extends Component {
         fetchSuggestions(this.props).then(result => {
             this.setState({ suggestions: result, });
         });
-    }
-
-    onSuggestionClick(suggestions) {
-        this.props.acceptSuggestion(suggestions);
-        // this.props.setHistory([
-        //     ...this.props.history,
-        //     [...suggestions].map(item => ({
-        //         'char': item.toUpperCase(),
-        //         'status': 'absent',
-        //     }))
-        // ]);
     }
 
     render() {
@@ -73,22 +62,46 @@ export class Suggestions extends Component {
     }
 }
 
+const Tile = ({ character, wordIndex, characterIndex, onTileFlip }) => {
+    return (
+        <button
+            className={`tile ${character.status}-button suggest-button`}
+            onClick={() => onTileFlip(wordIndex, characterIndex, character.status)}
+        >
+            {character.char}
+        </button>
+    );
+}
+
 export class History extends Component {
     render() {
         const gridTemplateColumns = `repeat(${this.props.length + 1}, 1fr)`;
+        const gridTemplateRows = `repeat(${this.props.history.length + 1}, 1fr)`;
         return (
-            <div className="board" style={{gridTemplateColumns,}}>
-                {this.props.history.map(word => (
+            <div className="board" style={{gridTemplateColumns, gridTemplateRows}}>
+                {this.props.history.map((word, wordIndex) => (
                     <>
-                        {word.map(character => (
-                            <div className={`tile ${character.status}-button`}>
-                                {character.char}
-                            </div>
+                        {word.map((character, characterIndex) => (
+                            <Tile
+                                key={wordIndex * 100 + characterIndex}
+                                character={character}
+                                wordIndex={wordIndex}
+                                characterIndex={characterIndex}
+                                onTileFlip={this.props.onTileFlip}
+                            />
                         ))}
-                        <button className="suggest-button">
-                            Action
+                        <button
+                            className="suggest-button"
+                            onClick={() => this.props.onWordRemove(wordIndex)}
+                        >
+                            ⌫
                         </button>
                     </>
+                ))}
+                {[...Array(this.props.length)].map((_, index) => (
+                    <button className="tile" style={{color: "black"}} key={index}>
+                        {this.props.input.length >= index ? this.props.input[index] : '\u00a0\u00a0'}
+                    </button>
                 ))}
             </div>
         );
@@ -96,12 +109,15 @@ export class History extends Component {
 }
 
 export class KeyBoard extends Component {
-    onChange = (input) => {
-        console.log("Input changed", input);
-    }
-
     onKeyPress = (button) => {
         console.log("Button pressed", button);
+        if (button === '{enter}' && this.props.input.length === this.props.length) {
+            this.props.onInputConfirm();
+        } else if (button === '{bksp}') {
+            this.props.onInputBackSpace();
+        } else {
+            this.props.onInputUpdate(button.toLowerCase());
+        }
     }
 
     getCorrectButtons = () => {
@@ -140,17 +156,17 @@ export class KeyBoard extends Component {
                 }}
                 buttonTheme={[
                     {
-                        class: "correct-button",
-                        buttons: this.getCorrectButtons()
+                        class: "absent-button",
+                        buttons: this.getAbsentButtons()
                     },
                     {
                         class: "present-button",
                         buttons: this.getPresentButtons()
                     },
                     {
-                        class: "absent-button",
-                        buttons: this.getAbsentButtons()
-                    }
+                        class: "correct-button",
+                        buttons: this.getCorrectButtons()
+                    },
                 ]}
             />
         );
