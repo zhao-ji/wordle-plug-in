@@ -93,8 +93,8 @@ code {
     grid-template-rows: repeat(6, 1fr);
     grid-gap: 5px;
     padding: 10px;
-    width: 261px;
-    height: 312px;
+    /*width: 261px;
+    height: 312px;*/
     margin: 0 auto;
 }
 
@@ -107,4 +107,30 @@ code {
     user-select: none;
     color: var(--tile-text-color);
     font-weight: bold;
+}
+
+#suggestions {
+    min-height: 10vh;
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.1rem;
+    border: 1px solid rgba(120, 120, 120, .3);
+    border-radius: 20px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+.suggest-button {
+    line-height: 2rem;
+    margin: 0.2em;
+    border: 1px solid rgba(120, 120, 120, .3);
+    border-radius: 10px;
+    font-size: 1em;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--key-evaluated-text-color);
+    background-color: var(--key-bg-correct);
+    cursor: pointer;
 }

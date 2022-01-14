@@ -1,50 +1,98 @@
 import React, { Component } from 'react';
+
 import Keyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
 
-export function Suggestions() {
-    return (
-        <div style={{margin: "50px auto", fontSize: "20px"}}>
-            <span> their </span>
-            <span> could </span>
-        </div>
-    );
+
+export async function fetchSuggestions({ length, history }) {
+    const body = { length, history };
+    let url = new URL("https://plug-in.minganci.org/api/");
+
+    const response = await fetch(url, {
+        method: 'post',
+        headers: {
+            'Accept': 'application/json, text/plain, */*',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body),
+    });
+    const data = await response.json();
+    return data;
 }
 
-export function History() {
-    return (
-        <div className="board">
-            <div className="tile correct-button">D</div>
-            <div className="tile correct-button">T</div>
-            <div className="tile correct-button">D</div>
-            <div className="tile present-button">T</div>
-            <div className="tile present-button">T</div>
 
-            <div className="tile present-button">D</div>
-            <div className="tile present-button">T</div>
-            <div className="tile absent-button">D</div>
-            <div className="tile absent-button">T</div>
-            <div className="tile absent-button">T</div>
+export class Suggestions extends Component {
+    state = {
+        suggestions: [],
+    }
 
-            <div className="tile present-button">D</div>
-            <div className="tile present-button">T</div>
-            <div className="tile absent-button">D</div>
-            <div className="tile absent-button">T</div>
-            <div className="tile absent-button">T</div>
+    componentDidMount() {
+        this.updateSuggestions();
+    }
 
-            <div className="tile present-button">D</div>
-            <div className="tile present-button">T</div>
-            <div className="tile absent-button">D</div>
-            <div className="tile absent-button">T</div>
-            <div className="tile absent-button">T</div>
+    componentDidUpdate(prevProps) {
+        const {length, history} = prevProps;
+        const {length: _length, history: _history} = this.props;
+        if (length !== _length || history.length !== _history.length) {
+            this.updateSuggestions();
+        }
+    }
 
-            <div className="tile present-button">D</div>
-            <div className="tile present-button">T</div>
-            <div className="tile absent-button">D</div>
-            <div className="tile absent-button">T</div>
-            <div className="tile absent-button">T</div>
-        </div>
-    );
+    updateSuggestions() {
+        fetchSuggestions(this.props).then(result => {
+            this.setState({ suggestions: result, });
+        });
+    }
+
+    onSuggestionClick(suggestions) {
+        this.props.acceptSuggestion(suggestions);
+        // this.props.setHistory([
+        //     ...this.props.history,
+        //     [...suggestions].map(item => ({
+        //         'char': item.toUpperCase(),
+        //         'status': 'absent',
+        //     }))
+        // ]);
+    }
+
+    render() {
+        if (this.state.suggestions.length === 0) return ("");
+        return (
+            <div id="suggestions">
+                {this.state.suggestions.map(suggestion => (
+                    <button
+                        key={suggestion}
+                        className="suggest-button"
+                        onClick={() => this.props.acceptSuggestion(suggestion)}
+                    >
+                        {suggestion}
+                    </button>
+                ))}
+            </div>
+        );
+    }
+}
+
+export class History extends Component {
+    render() {
+        const gridTemplateColumns = `repeat(${this.props.length + 1}, 1fr)`;
+        return (
+            <div className="board" style={{gridTemplateColumns,}}>
+                {this.props.history.map(word => (
+                    <>
+                        {word.map(character => (
+                            <div className={`tile ${character.status}-button`}>
+                                {character.char}
+                            </div>
+                        ))}
+                        <button className="suggest-button">
+                            Action
+                        </button>
+                    </>
+                ))}
+            </div>
+        );
+    }
 }
 
 export class KeyBoard extends Component {
@@ -54,6 +102,24 @@ export class KeyBoard extends Component {
 
     onKeyPress = (button) => {
         console.log("Button pressed", button);
+    }
+
+    getCorrectButtons = () => {
+        return [].concat.apply([], this.props.history).filter(
+            item => item.status === "correct"
+        ).map(item => item.char).join(" ").toUpperCase();
+    }
+
+    getPresentButtons = () => {
+        return [].concat.apply([], this.props.history).filter(
+            item => item.status === "present"
+        ).map(item => item.char).join(" ").toUpperCase();
+    }
+
+    getAbsentButtons = () => {
+        return [].concat.apply([], this.props.history).filter(
+            item => item.status === "absent"
+        ).map(item => item.char).join(" ").toUpperCase();
     }
 
     render() {
@@ -75,11 +141,15 @@ export class KeyBoard extends Component {
                 buttonTheme={[
                     {
                         class: "correct-button",
-                        buttons: "Q W E R T Y"
+                        buttons: this.getCorrectButtons()
+                    },
+                    {
+                        class: "present-button",
+                        buttons: this.getPresentButtons()
                     },
                     {
                         class: "absent-button",
-                        buttons: "Z X C V"
+                        buttons: this.getAbsentButtons()
                     }
                 ]}
             />
