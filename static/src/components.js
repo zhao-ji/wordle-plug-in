@@ -99,8 +99,8 @@ export class History extends Component {
                     </>
                 ))}
                 {[...Array(this.props.length)].map((_, index) => (
-                    <button className="tile" style={{color: "black"}} key={index}>
-                        {this.props.input.length >= index ? this.props.input[index] : '\u00a0\u00a0'}
+                    <button className="tile suggest-input-button" key={index}>
+                        {this.props.input.length > index ? this.props.input[index] : '\u00a0\u00a0'}
                     </button>
                 ))}
             </div>
@@ -110,13 +110,14 @@ export class History extends Component {
 
 export class KeyBoard extends Component {
     onKeyPress = (button) => {
-        console.log("Button pressed", button);
-        if (button === '{enter}' && this.props.input.length === this.props.length) {
-            this.props.onInputConfirm();
+        if (button === '{enter}') {
+            if (this.props.input.length === this.props.length)
+                this.props.onInputConfirm();
         } else if (button === '{bksp}') {
             this.props.onInputBackSpace();
         } else {
-            this.props.onInputUpdate(button.toLowerCase());
+            if (this.props.input.length < this.props.length)
+                this.props.onInputUpdate(button.toLowerCase());
         }
     }
 

@@ -49,7 +49,6 @@ export default class App extends Component {
         if (!this.state.input.length) return;
         this.setState((prevState, props) => {
             const newInput = prevState.input.slice(0, prevState.input.length - 1);
-            console.log(newInput)
             return {input: newInput};
         });
     }
