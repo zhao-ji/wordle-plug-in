@@ -34,7 +34,7 @@ export default class App extends Component {
     onWordRemove = (wordIndex) => {
         this.setState((prevState, props) => {
             const oldHistory = JSON.parse(JSON.stringify(prevState.history));
-            oldHistory.pop(wordIndex);
+            oldHistory.splice(wordIndex, 1);
             return { history: oldHistory };
         });
     }
