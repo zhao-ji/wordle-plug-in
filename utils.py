@@ -101,9 +101,9 @@ def find_words_by_chars(length, query):
     negation_sign = None
     options = ["+", "*", "/", "|", "_"]
     separator = [c for c in query if not c.isalnum() and c != "-"]
-    assert len(separator) <= 1
+    assert len(separator) <= 1, "More than 1 separator!"
     if separator:
-        assert separator[0] in options
+        assert separator[0] in options, "Separator can only be in [+*/|_]!"
         negation_sign = separator[0]
 
     negation_str = None
