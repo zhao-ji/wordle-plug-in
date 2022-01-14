@@ -2,7 +2,8 @@ import sqlite3
 
 import pytest
 
-from utils import find_words_by_history, find_words_by_chars
+from utils import find_words_by_chars
+# from utils import find_words_by_history
 
 
 @pytest.fixture
@@ -20,6 +21,71 @@ def test_connection(setup_database):
     cursor = setup_database
     cursor.execute("select count(*) from words;")
     assert cursor.fetchone()[0] == 20000
+
+
+class TestCharsLength:
+    """
+    edge case:
+        length is [0, 15]
+        length is less than correct
+        length is less than present
+        length is more than 26 - absent
+    usual case:
+        length equals correct
+        length equals present
+        length equals 26 - absent
+        length more than correct
+        length more than present
+        length less than 26 - absent
+    others:
+        only length, no query
+    """
+    pass
+
+
+class TestCharsSaperator:
+    @pytest.mark.parametrize("length, chars", [
+        (5, "a1p2p3l4.e"),
+        (5, "a1p2p3l4&e"),
+        (5, "a1p2p3l4)e"),
+    ])
+    def test_seperator_illegel(self, setup_database, length, chars):
+        with pytest.raises(
+                AssertionError, match="Separator can only be in"):
+            find_words_by_chars(length, chars)
+
+    @pytest.mark.parametrize("length, chars", [
+        (5, "a1p2p3l4__e"),
+        (5, "a1p2p3l4_e_"),
+        (5, "a1p2p3l_4_e_"),
+    ])
+    def test_seperator_more_than_1(self, setup_database, length, chars):
+        with pytest.raises(AssertionError, match="More than 1 separator!"):
+            find_words_by_chars(length, chars)
+
+    @pytest.mark.parametrize("length, chars, expected", [
+        (3, "wh_y", ["who", "how"]),
+        (3, "wh+y", ["who", "how"]),
+        (3, "wh*y", ["who", "how"]),
+        (3, "wh/y", ["who", "how"]),
+        (3, "wh|y", ["who", "how"]),
+        (4, "hom_w", ["home", "homo"]),
+        (4, "hom+w", ["home", "homo"]),
+        (4, "hom*w", ["home", "homo"]),
+        (4, "hom/w", ["home", "homo"]),
+        (4, "hom|w", ["home", "homo"]),
+        (5, "a1p2p3l4_e", ["apply", ]),
+        (5, "a1p2p3l4+e", ["apply", ]),
+        (5, "a1p2p3l4*e", ["apply", ]),
+        (5, "a1p2p3l4/e", ["apply", ]),
+        (5, "a1p2p3l4|e", ["apply", ]),
+    ])
+    def test_different_separator(
+            self, setup_database, length, chars, expected):
+        cursor = setup_database
+        cursor.execute(find_words_by_chars(length, chars))
+        results = [item[0] for item in cursor.fetchall()]
+        assert results == expected
 
 
 class TestCharsCorrect:
@@ -74,6 +140,27 @@ class TestCharsCorrect:
         assert results == expected
 
 
+class TestCharsPresent:
+    """
+    edge case:
+        conflict with correct
+        conflict with negation str
+    usual case:
+        1 present
+        multi present
+        all present
+        1 present with 1 position
+        1 present with multi positions
+        multi present with multi positions
+        all present with multi positions
+        possible position is only one
+        possible position is multi
+        impossible position is only one
+        impossible position is multi
+    """
+    pass
+
+
 class TestCharsNegationStr:
     @pytest.mark.parametrize("length, chars, expected", [
         (3, "bn_icoe", ["nba", "ban", "abn"]),
@@ -85,57 +172,18 @@ class TestCharsNegationStr:
         results = [item[0] for item in cursor.fetchall()]
         assert results == expected
 
-    @pytest.mark.parametrize("length, chars", [
-        (5, "a1p2p3l4__e"),
-        (5, "a1p2p3l4_e_"),
-        (5, "a1p2p3l_4_e_"),
-    ])
-    def test_seperator_more_than_1(self, setup_database, length, chars):
-        with pytest.raises(AssertionError, match="More than 1 separator!"):
-            find_words_by_chars(length, chars)
-
-    @pytest.mark.parametrize("length, chars", [
-        (5, "a1p2p3l4.e"),
-        (5, "a1p2p3l4&e"),
-        (5, "a1p2p3l4)e"),
-    ])
-    def test_seperator_illegel(self, setup_database, length, chars):
-        with pytest.raises(
-                AssertionError, match="Separator can only be in"):
-            find_words_by_chars(length, chars)
-
-    @pytest.mark.parametrize("length, chars, expected", [
-        (3, "wh_y", ["who", "how"]),
-        (3, "wh+y", ["who", "how"]),
-        (3, "wh*y", ["who", "how"]),
-        (3, "wh/y", ["who", "how"]),
-        (3, "wh|y", ["who", "how"]),
-        (4, "hom_w", ["home", "homo"]),
-        (4, "hom+w", ["home", "homo"]),
-        (4, "hom*w", ["home", "homo"]),
-        (4, "hom/w", ["home", "homo"]),
-        (4, "hom|w", ["home", "homo"]),
-        (5, "a1p2p3l4_e", ["apply", ]),
-        (5, "a1p2p3l4+e", ["apply", ]),
-        (5, "a1p2p3l4*e", ["apply", ]),
-        (5, "a1p2p3l4/e", ["apply", ]),
-        (5, "a1p2p3l4|e", ["apply", ]),
-    ])
-    def test_different_separator(
-            self, setup_database, length, chars, expected):
-        cursor = setup_database
-        cursor.execute(find_words_by_chars(length, chars))
-        results = [item[0] for item in cursor.fetchall()]
-        assert results == expected
-
     @pytest.mark.parametrize("length, chars, expected", [
         (4, "hom_ww", ["home", "homo"]),
         (4, "lk_aoushcmyn", ["like", "kill"]),
         (4, "lk_aoauosshcmyn", ["like", "kill"]),
     ])
-    def test_repeat_separator(
+    def test_repeat_negation_chars(
             self, setup_database, length, chars, expected):
         cursor = setup_database
         cursor.execute(find_words_by_chars(length, chars))
         results = [item[0] for item in cursor.fetchall()]
         assert results == expected
+
+
+class TestHistoryLength:
+    pass
