@@ -65,9 +65,7 @@ def forge_query(length, correct, present, negation_str):
         query_str += " and substr(word, {}, 1) = '{}'".format(k, v)
         certain_positions.add(k)
     for k, v in present.items():
-        possible_positions = list(set(
-            range(1, length + 1)
-        ) - certain_positions - set(v))
+        possible_positions = list(set(range(1, length + 1)) - set(v))
         if len(possible_positions) == 1:
             query_str += " and instr(word, '{}') = {}".format(
                 k, possible_positions[0])
