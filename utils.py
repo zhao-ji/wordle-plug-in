@@ -52,7 +52,7 @@ def forge_query(length, correct, present, negation_str):
             and substr(word, 1, 1) = 'h'
             and instr(word, 'l') in (3, 5)
             and substr(word, 4, 1) != 'l' and substr(word, 2, 1) != 'l'
-            limit 30;
+            limit 20;
     """
 
     certain_positions = set()
@@ -74,7 +74,7 @@ def forge_query(length, correct, present, negation_str):
                 k, str(tuple(possible_positions)))
         for item in v:
             query_str += " and substr(word, {}, 1) != '{}'".format(item, k)
-    query_str += " limit 30;"
+    query_str += " limit 20;"
     return query_str
 
 

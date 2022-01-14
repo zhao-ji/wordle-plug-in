@@ -28,7 +28,7 @@ def search():
     if not all(["length" in content, "history" in content]):
         return "Request error!", status.HTTP_400_BAD_REQUEST
     return jsonify(apply_query(find_words_by_history(
-        content["length"], content["history"])))
+        content["length"], content["history"]), {}))
 
 
 @app.route("/", methods=['GET'])
@@ -39,7 +39,7 @@ def easy_search():
     logbook.info(" {}, length: {}, query: {} ".format(ip, length, query))
     if not query or not length:
         return jsonify(['their', 'could', 'among'])
-    return jsonify(apply_query(find_words_by_chars(length, query)))
+    return jsonify(apply_query(find_words_by_chars(length, query), {}))
 
 
 if __name__ == "__main__":
