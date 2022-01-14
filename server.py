@@ -24,9 +24,10 @@ app = Flask(__name__)
 def search():
     content = request.get_json()
     ip = request.headers.get("X-Real-IP", "")
-    logbook.info(" {} {}".format(ip, "content"))
     if not all(["length" in content, "history" in content]):
         return "Request error!", status.HTTP_400_BAD_REQUEST
+    logbook.info(" {} {} {}".format(
+        ip, content["length"], str(content["history"])))
     return jsonify(apply_query(find_words_by_history(
         content["length"], content["history"]), {}))
 

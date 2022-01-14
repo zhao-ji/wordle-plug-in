@@ -153,7 +153,7 @@ export class KeyBoard extends Component {
                 }}
                 display={{
                     "{bksp}": "⌫",
-                    "{enter}": "RETURN",
+                    "{enter}": "ENTER",
                 }}
                 buttonTheme={[
                     {
