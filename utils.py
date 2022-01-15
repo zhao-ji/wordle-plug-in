@@ -32,7 +32,7 @@ def apply_query(query_str, xargs):
         return [item[0] for item in results]
 
 
-def forge_query(length, correct, present, negation_str):
+def forge_query(correct, present, negation_str, length=5, top=100000, limit=20):
     """
     PARAMETERS:
         length := 5
@@ -47,18 +47,17 @@ def forge_query(length, correct, present, negation_str):
         negation_str := 'e'
     RETURN:
         select word from words where
-            count = 5
+            count = 5 and id <= 100000
             and word not glob '*[e]*'
             and substr(word, 1, 1) = 'h'
             and instr(word, 'l') in (3, 5)
             and substr(word, 4, 1) != 'l' and substr(word, 2, 1) != 'l'
-            limit 20;
+            order by id limit 20;
     """
 
     certain_positions = set()
-    query_str = "select word from words where"
-    if length:
-        query_str += " count = {}".format(length)
+    query_str = "select word from words where count = {} and id <= {}".format(
+        length, top)
     if negation_str:
         query_str += " and word not glob '*[{}]*'".format(negation_str)
     for k, v in correct.items():
@@ -74,7 +73,8 @@ def forge_query(length, correct, present, negation_str):
                 k, str(tuple(possible_positions)))
         for item in v:
             query_str += " and substr(word, {}, 1) != '{}'".format(item, k)
-    query_str += " limit 20;"
+    query_str += " order by id limit {};".format(limit)
+    print(query_str)
     return query_str
 
 
@@ -90,7 +90,7 @@ def apply_cache(cache, correct, present):
         present[cache[0]] = []
 
 
-def find_words_by_chars(length, query):
+def find_words_by_chars(length, query, top=100000, limit=20):
     """
     query := a3d-2-4*bcr
         correct := instr(word, 'a') = 3
@@ -98,6 +98,7 @@ def find_words_by_chars(length, query):
             and substr(word, 4, 1) != 'l' and substr(word, 2, 1) != 'l'
         absent := and word not glob '*[bcr]*'
     """
+    print(length, top, limit)
     negation_sign = None
     options = ["+", "*", "/", "|", "_"]
     separator = [c for c in query if not c.isalnum() and c != "-"]
@@ -123,10 +124,10 @@ def find_words_by_chars(length, query):
             cache.append(item)
     apply_cache(cache, correct, present)
 
-    return forge_query(length, correct, present, negation_str)
+    return forge_query(correct, present, negation_str, length, top, limit)
 
 
-def find_words_by_history(length, history):
+def find_words_by_history(history, length=5, top=100000, limit=20):
     """
     history := [
         [
@@ -162,4 +163,4 @@ def find_words_by_history(length, history):
                 present.setdefault(item["char"], []).append(-(index+1))
             elif item.get("status", "") == "absent":
                 absent.add(item["char"])
-    return forge_query(length, correct, present, "".join(absent))
+    return forge_query(correct, present, "".join(absent), length, top, limit)

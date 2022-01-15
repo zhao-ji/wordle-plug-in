@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from flask import Flask, request, jsonify
+import time
+
+from flask import g
+from flask import Flask, jsonify, request
 from flask_api import status
 import logbook
 
@@ -20,27 +23,75 @@ apply_logging()
 app = Flask(__name__)
 
 
+@app.before_request
+def record_request_start_time():
+    g.start = time.time()
+
+
+@app.after_request
+def record_response_time(response):
+    time_cost = time.time() - g.start
+    logbook.info("Response time: {}.".format(time_cost))
+    if ((response.response) and
+            (200 <= response.status_code < 300) and
+            (response.content_type.startswith('application/json'))):
+        response.headers["Response-Time"] = time_cost
+    return response
+
+
 @app.route("/", methods=['POST'])
 def search():
     content = request.get_json()
-    ip = request.headers.get("X-Real-IP", "")
-    if not all(["length" in content, "history" in content]):
+    history = content.get("history", None)
+    length = int(content.get("length", 5))
+    top = int(content.get("top", 100000))
+    limit = int(content.get("limit", 20))
+    if not all([length, history or history == []]):
         return "Request error!", status.HTTP_400_BAD_REQUEST
-    logbook.info(" {} {} {}".format(
-        ip, content["length"], str(content["history"])))
-    return jsonify(apply_query(find_words_by_history(
-        content["length"], content["history"]), {}))
+
+    ip = request.headers.get("X-Real-IP", "")
+    logbook.info(
+        "from: {}, length: {}, top: {}, limit: {}, history: {}."
+        .format(ip, length, top, limit, str(history)))
+
+    if not all([length > 0, top > 0, limit > 0]):
+        return jsonify([
+            'their', 'could', 'among', 'which', 'there',
+            'would', 'other', 'these', 'about', 'first',
+            'after', 'where', 'those', 'state', 'being',
+            'years', 'under', 'world', 'three', 'while',
+            'great',
+        ])
+
+    words = apply_query(find_words_by_history(history, length, top, limit), {})
+    logbook.info("from: {}, query result: {}.".format(ip, ", ".join(words)))
+    return jsonify(words)
 
 
 @app.route("/", methods=['GET'])
 def easy_search():
     query = request.args.get("q", "")
-    length = int(request.args.get("l", 0))
+    length = int(request.args.get("l", 5))
+    top = int(request.args.get("top", 100000))
+    limit = int(request.args.get("limit", 20))
+
     ip = request.headers.get("X-Real-IP", "")
-    logbook.info(" {}, length: {}, query: {} ".format(ip, length, query))
-    if not query or not length:
-        return jsonify(['their', 'could', 'among'])
-    return jsonify(apply_query(find_words_by_chars(length, query), {}))
+    logbook.info(
+        "from: {}, length: {}, query: {} , top: {}, limit: {}."
+        .format(ip, length, query, top, limit))
+
+    if not all([query, length > 0, top > 0, limit > 0]):
+        return jsonify([
+            'their', 'could', 'among', 'which', 'there',
+            'would', 'other', 'these', 'about', 'first',
+            'after', 'where', 'those', 'state', 'being',
+            'years', 'under', 'world', 'three', 'while',
+            'great',
+        ])
+
+    words = apply_query(find_words_by_chars(length, query, top, limit), {})
+    logbook.info("from:{}, query result: {}.".format(ip, ", ".join(words)))
+    return jsonify(words)
 
 
 if __name__ == "__main__":

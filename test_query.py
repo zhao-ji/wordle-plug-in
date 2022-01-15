@@ -11,7 +11,7 @@ def setup_database():
     """
     Fixture to set up the database with real data
     """
-    connection = sqlite3.connect("google-words.db")
+    connection = sqlite3.connect("words.db")
     cursor = connection.cursor()
     yield cursor
     connection.close()
@@ -20,7 +20,7 @@ def setup_database():
 def test_connection(setup_database):
     cursor = setup_database
     cursor.execute("select count(*) from words;")
-    assert cursor.fetchone()[0] == 20000
+    assert cursor.fetchone()[0] > 0
 
 
 class TestCharsLength:
@@ -40,10 +40,42 @@ class TestCharsLength:
     others:
         only length, no query
     """
-    pass
+    @pytest.mark.parametrize("length, chars, expected", [
+        (1, "a", ["a"]),
+        (2, "o1f2", ["of"]),
+        (3, "t1h2e3", ["the"]),
+        (4, "t1h2a3t4", ["that"]),
+        (5, "w1h2i3c4h5", ["which"]),
+        (6, "s1h2o3u4l5d6", ["should"]),
+        (7, "between", ["between"]),
+        (8, "children", ["children"]),
+        (9, "different", ["different"]),
+        (10, "government", ["government"]),
+        (11, "i1n2f3o4r5m6a7tion_sv", ["information"]),
+        (12, "r1e2lationship", ["relationship"]),
+        (13, "i1n2t3e4r5n6a7tional", ["international"]),
+        (14, "responsibility", ["responsibility"]),
+        (15, "c1h2a3r4a5c6teristics", ["characteristics"]),
+    ])
+    def test_length_range(self, setup_database, length, chars, expected):
+        cursor = setup_database
+        cursor.execute(find_words_by_chars(length, chars))
+        results = [item[0] for item in cursor.fetchall()]
+        assert results == expected
 
 
 class TestCharsSaperator:
+    """
+    illegal saperator raise exception
+    multipul legal saperator raise exception
+
+    single legal saperator works as charm
+    single legal saperator with different length works as charm
+
+    single legal saperator with negation string works as charm
+    single legal saperator without negation string works as charm
+    single legal saperator with multi negation string works as charm
+    """
     @pytest.mark.parametrize("length, chars", [
         (5, "a1p2p3l4.e"),
         (5, "a1p2p3l4&e"),
@@ -89,6 +121,12 @@ class TestCharsSaperator:
 
 
 class TestCharsCorrect:
+    """
+    correct string works good
+    multi correct chars work good
+    chars without position work good
+    mixing of with or without position works good
+    """
     @pytest.mark.parametrize("length, chars, expected", [
         (3, "t1h2e3", ["the"]),
         (3, "a1n2d3", ["and"]),

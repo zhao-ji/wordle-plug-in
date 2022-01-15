@@ -6,7 +6,7 @@ import 'react-simple-keyboard/build/css/index.css';
 
 export async function fetchSuggestions({ length, history }) {
     const body = { length, history };
-    let url = new URL("https://plug-in.minganci.org/api/");
+    const url = new URL("https://plug-in.minganci.org/api/");
 
     const response = await fetch(url, {
         method: 'post',
