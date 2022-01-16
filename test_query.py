@@ -3,6 +3,7 @@ import sqlite3
 import pytest
 
 from utils import find_words_by_chars
+from utils import SearchByChars
 # from utils import find_words_by_history
 
 
@@ -15,6 +16,17 @@ def setup_database():
     cursor = connection.cursor()
     yield cursor
     connection.close()
+
+
+def mock_apply_query(sql_string):
+    connection = sqlite3.connect("words.db")
+    cursor = connection.cursor()
+    cursor.execute(sql_string)
+    results = [item[0] for item in cursor.fetchall()]
+    try:
+        return results
+    finally:
+        connection.close()
 
 
 def test_connection(setup_database):
@@ -57,10 +69,13 @@ class TestCharsLength:
         (14, "responsibility", ["responsibility"]),
         (15, "c1h2a3r4a5c6teristics", ["characteristics"]),
     ])
-    def test_length_range(self, setup_database, length, chars, expected):
-        cursor = setup_database
-        cursor.execute(find_words_by_chars(length, chars))
-        results = [item[0] for item in cursor.fetchall()]
+    def test_length_range(self, monkeypatch, length, chars, expected):
+        monkeypatch.setattr('utils.apply_query', mock_apply_query)
+
+        search = SearchByChars(length=length)
+        search.process_input(chars)
+        results = search.get_suggestions()
+
         assert results == expected
 
 

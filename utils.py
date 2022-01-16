@@ -23,11 +23,11 @@ def apply_logging():
     local_log.push_application()
 
 
-def apply_query(query_str, xargs):
+def apply_query(query_str, xargs=None):
     with closing(sqlite3.connect("google-words.db")) as con, \
             con, \
             closing(con.cursor()) as cursor:
-        cursor.execute(query_str, xargs)
+        cursor.execute(query_str, xargs or {})
         results = cursor.fetchall()
         return [item[0] for item in results]
 
@@ -209,7 +209,7 @@ class BaseSearch:
             self.correct, self.present, self.negation_str,
             self.length, self.top, self.limit)
 
-        suggestions = apply_query(query, {})
+        suggestions = apply_query(query)
 
         return suggestions
 
