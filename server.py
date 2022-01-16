@@ -9,7 +9,9 @@ from flask_api import status
 import logbook
 
 from utils import apply_logging
-from utils import find_words_by_history, find_words_by_chars, apply_query
+from utils import SearchByChars
+from utils import SearchByHistoryInJSON
+from utils import SearchByHistory
 
 # import sentry_sdk
 # from sentry_sdk.integrations.flask import FlaskIntegration
@@ -39,8 +41,8 @@ def record_response_time(response):
     return response
 
 
-@app.route("/", methods=['POST'])
-def search():
+@app.route("/history/", methods=['POST'])
+def search_by_history_post():
     content = request.get_json()
     history = content.get("history", None)
     length = int(content.get("length", 5))
@@ -63,13 +65,43 @@ def search():
             'great',
         ])
 
-    words = apply_query(find_words_by_history(history, length, top, limit), {})
+    search = SearchByHistoryInJSON(length, top, limit)
+    search.process_input(history)
+    words = search.get_suggestions()
     logbook.info("from: {}, query result: {}.".format(ip, ", ".join(words)))
     return jsonify(words)
 
 
+@app.route("/history/", methods=['GET'])
+def search_by_history():
+    history = request.args.get("h", "")
+    length = int(request.args.get("l", 5))
+    top = int(request.args.get("top", 100000))
+    limit = int(request.args.get("limit", 20))
+
+    ip = request.headers.get("X-Real-IP", "")
+    logbook.info(
+        "from: {}, length: {}, history: {} , top: {}, limit: {}."
+        .format(ip, length, history, top, limit))
+
+    if not all([history, length > 0, top > 0, limit > 0]):
+        return jsonify([
+            'their', 'could', 'among', 'which', 'there',
+            'would', 'other', 'these', 'about', 'first',
+            'after', 'where', 'those', 'state', 'being',
+            'years', 'under', 'world', 'three', 'while',
+            'great',
+        ])
+
+    search = SearchByHistory(length, top, limit)
+    search.process_input(history)
+    words = search.get_suggestions()
+    logbook.info("from:{}, query result: {}.".format(ip, ", ".join(words)))
+    return jsonify(words)
+
+
 @app.route("/", methods=['GET'])
-def easy_search():
+def search():
     query = request.args.get("q", "")
     length = int(request.args.get("l", 5))
     top = int(request.args.get("top", 100000))
@@ -89,7 +121,9 @@ def easy_search():
             'great',
         ])
 
-    words = apply_query(find_words_by_chars(length, query, top, limit), {})
+    search = SearchByChars(length, top, limit)
+    search.process_input(query)
+    words = search.get_suggestions()
     logbook.info("from:{}, query result: {}.".format(ip, ", ".join(words)))
     return jsonify(words)
 

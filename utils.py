@@ -74,7 +74,6 @@ def forge_query(correct, present, negation_str, length=5, top=100000, limit=20):
         for item in v:
             query_str += " and substr(word, {}, 1) != '{}'".format(item, k)
     query_str += " order by id limit {};".format(limit)
-    print(query_str)
     return query_str
 
 
@@ -90,15 +89,13 @@ def apply_cache(cache, correct, present):
         present[cache[0]] = []
 
 
-def find_words_by_chars(length, query, top=100000, limit=20):
+def find_words_by_chars(query):
     """
     query := a3d-2-4*bcr
         correct := instr(word, 'a') = 3
         present := and instr(word, 'l') in (3, 5)
-            and substr(word, 4, 1) != 'l' and substr(word, 2, 1) != 'l'
         absent := and word not glob '*[bcr]*'
     """
-    print(length, top, limit)
     negation_sign = None
     options = ["+", "*", "/", "|", "_"]
     separator = [c for c in query if not c.isalnum() and c != "-"]
@@ -124,10 +121,31 @@ def find_words_by_chars(length, query, top=100000, limit=20):
             cache.append(item)
     apply_cache(cache, correct, present)
 
-    return forge_query(correct, present, negation_str, length, top, limit)
+    return correct, present, negation_str
 
 
-def find_words_by_history(history, length=5, top=100000, limit=20):
+def find_words_by_history(history):
+    """
+    a+p-p-l~e~,h-e+l~l~o-
+    """
+    correct = {}
+    present = {}
+    absent = set()
+    for row in history.split(","):
+        lists = list(row)
+        char_list = lists[::2]
+        sign_list = lists[1::2]
+        for index, [char, status] in enumerate(zip(char_list, sign_list)):
+            if status == "+":
+                correct[index + 1] = char
+            elif status == "~":
+                present.setdefault(char, []).append(index+1)
+            elif status == "-":
+                absent.add(char)
+    return correct, present, "".join(absent)
+
+
+def find_words_by_history_in_json(history):
     """
     history := [
         [
@@ -160,7 +178,58 @@ def find_words_by_history(history, length=5, top=100000, limit=20):
             if item.get("status", "") == "correct":
                 correct[index + 1] = item["char"]
             elif item.get("status", "") == "present":
-                present.setdefault(item["char"], []).append(-(index+1))
+                present.setdefault(item["char"], []).append(index+1)
             elif item.get("status", "") == "absent":
                 absent.add(item["char"])
-    return forge_query(correct, present, "".join(absent), length, top, limit)
+    return correct, present, "".join(absent)
+
+
+class BaseSearch:
+
+    def __init__(self, length=5, top=100000, limit=20):
+        self.length = length
+        self.limit = limit
+        self.top = top
+
+    def process_input(self, input):
+        self.correct = {}
+        self.present = {}
+        self.negation_str = ""
+
+    def check(self):
+        if len(self.correct) > self.length:
+            return False
+        return True
+
+    def get_suggestions(self):
+        if not self.check():
+            return []
+
+        query = forge_query(
+            self.correct, self.present, self.negation_str,
+            self.length, self.top, self.limit)
+
+        suggestions = apply_query(query, {})
+
+        return suggestions
+
+
+class SearchByChars(BaseSearch):
+
+    def process_input(self, query):
+        self.correct, self.present, self.negation_str = \
+            find_words_by_chars(query)
+
+
+class SearchByHistory(BaseSearch):
+
+    def process_input(self, query):
+        self.correct, self.present, self.negation_str = \
+            find_words_by_history(query)
+
+
+class SearchByHistoryInJSON(BaseSearch):
+
+    def process_input(self, query):
+        self.correct, self.present, self.negation_str = \
+            find_words_by_history_in_json(query)
