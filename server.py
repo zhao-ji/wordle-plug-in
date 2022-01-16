@@ -8,7 +8,7 @@ from flask import Flask, jsonify, request
 from flask_api import status
 import logbook
 
-from utils import apply_logging
+from utils import apply_logging, serialize_json_history
 from utils import SearchByChars
 from utils import SearchByHistoryInJSON
 from utils import SearchByHistory
@@ -54,7 +54,7 @@ def search_by_history_post():
     ip = request.headers.get("X-Real-IP", "")
     logbook.info(
         "from: {}, length: {}, top: {}, limit: {}, history: {}."
-        .format(ip, length, top, limit, str(history)))
+        .format(ip, length, top, limit, serialize_json_history(history)))
 
     if not all([length > 0, top > 0, limit > 0]):
         return jsonify([

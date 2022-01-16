@@ -7,6 +7,24 @@ import sqlite3
 SEARCH_QUERY = "select word from words where count = :length limit 5"
 
 
+def serialize_json_history(history):
+    sign_table = {
+        "correct": "+",
+        "present": "~",
+        "absent": "-",
+    }
+
+    query = ""
+    for row in history:
+        for column in row:
+            query += column["char"] + sign_table[column["status"]]
+        query += ","
+
+    if history:
+        query = query[0:-1]
+    return query
+
+
 def apply_logging():
     from os.path import abspath, exists, dirname, join
 
