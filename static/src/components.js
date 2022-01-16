@@ -21,6 +21,30 @@ export async function fetchSuggestions({ length, history }) {
 }
 
 
+export function Length ({ length, onLengthChange }) {
+    const lengthLimit = 15;
+    const lengthRange = Array.from(Array(lengthLimit).keys()).map(i => i + 1);
+    return (
+        <span className="length-section">
+            <label style={{display: "inline-block"}}>Length:</label>
+            <select
+                style={{display: "inline-block"}}
+                id="length"
+                name="length"
+                value={length}
+                onChange={onLengthChange}
+            >
+                {lengthRange.map(item => (
+                    <option value={item}>
+                        {item}
+                    </option>
+                ))}
+            </select>
+        </span>
+    );
+}
+
+
 export class Suggestions extends Component {
     state = {
         suggestions: [],
@@ -73,39 +97,37 @@ const Tile = ({ character, wordIndex, characterIndex, onTileFlip }) => {
     );
 }
 
-export class History extends Component {
-    render() {
-        const gridTemplateColumns = `repeat(${this.props.length + 1}, 1fr)`;
-        const gridTemplateRows = `repeat(${this.props.history.length + 1}, 1fr)`;
-        return (
-            <div className="board" style={{gridTemplateColumns, gridTemplateRows}}>
-                {this.props.history.map((word, wordIndex) => (
-                    <>
-                        {word.map((character, characterIndex) => (
-                            <Tile
-                                key={wordIndex * 100 + characterIndex}
-                                character={character}
-                                wordIndex={wordIndex}
-                                characterIndex={characterIndex}
-                                onTileFlip={this.props.onTileFlip}
-                            />
-                        ))}
-                        <button
-                            className="suggest-button"
-                            onClick={() => this.props.onWordRemove(wordIndex)}
-                        >
-                            ⌫
-                        </button>
-                    </>
-                ))}
-                {[...Array(this.props.length)].map((_, index) => (
-                    <button className="tile suggest-input-button" key={index}>
-                        {this.props.input.length > index ? this.props.input[index] : '\u00a0\u00a0'}
+export function History ({ length, history, onTileFlip, onWordRemove, input}) {
+    const gridTemplateColumns = `repeat(${length + 1}, 1fr)`;
+    const gridTemplateRows = `repeat(${history.length + 1}, 1fr)`;
+    return (
+        <div className="board" style={{gridTemplateColumns, gridTemplateRows}}>
+            {history.map((word, wordIndex) => (
+                <>
+                    {word.map((character, characterIndex) => (
+                        <Tile
+                            key={wordIndex * 100 + characterIndex}
+                            character={character}
+                            wordIndex={wordIndex}
+                            characterIndex={characterIndex}
+                            onTileFlip={onTileFlip}
+                        />
+                    ))}
+                    <button
+                        className="suggest-button"
+                        onClick={() => onWordRemove(wordIndex)}
+                    >
+                        ⌫
                     </button>
-                ))}
-            </div>
-        );
-    }
+                </>
+            ))}
+            {[...Array(length)].map((_, index) => (
+                <button className="tile suggest-input-button" key={index}>
+                    {input.length > index ? input[index] : '\u00a0\u00a0'}
+                </button>
+            ))}
+        </div>
+    );
 }
 
 export class KeyBoard extends Component {

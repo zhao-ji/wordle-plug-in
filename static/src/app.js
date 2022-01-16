@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
-import { Suggestions, History, KeyBoard } from "./components";
+import {
+    Length, Suggestions, History, KeyBoard,
+} from "./components";
 
 
 export default class App extends Component {
@@ -7,6 +9,12 @@ export default class App extends Component {
         length: 5,
         history: [],
         input: [],
+    }
+
+    onLengthChange = (event) => {
+        this.setState({
+            length: Number(event.target.value),
+        });
     }
 
     acceptSuggestion = (word) => {
@@ -67,7 +75,14 @@ export default class App extends Component {
         return (
             <div className="App">
                 <header className="App-header">
-                    Wordle Plug In
+                    <span style={{paddingInlineEnd: "5em"}}>&nbsp;</span>
+                    <span className="title">
+                        Wordle Plug In
+                    </span>
+                    <Length
+                        length={this.state.length}
+                        onLengthChange={this.onLengthChange}
+                    />
                 </header>
                 <Suggestions
                     acceptSuggestion={this.acceptSuggestion}

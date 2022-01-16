@@ -78,13 +78,16 @@ code {
   color: #282c34;
   min-height: 10vh;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  text-transform: uppercase;
+  justify-content: space-between;
   border-top: 1px solid;
   border-bottom: 1px solid;
+}
+
+.title {
+  font-size: calc(10px + 2vmin);
+  text-transform: uppercase;
 }
 
 .board {
