@@ -6,7 +6,7 @@ import 'react-simple-keyboard/build/css/index.css';
 
 export async function fetchSuggestions({ length, history }) {
     const body = { length, history };
-    const url = new URL("https://plug-in.minganci.org/api/history/");
+    const url = new URL("https://wordle-helper.minganci.org/api/history/");
 
     const response = await fetch(url, {
         method: 'post',

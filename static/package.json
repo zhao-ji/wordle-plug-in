@@ -1,7 +1,9 @@
 {
-  "name": "wordle-plug-in",
+  "name": "wordle-helper",
   "version": "0.1.0",
   "private": true,
+  "start_url": ".",
+  "homepage": ".",
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.1",
     "@testing-library/react": "^12.1.2",

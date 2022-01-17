@@ -77,7 +77,7 @@ export default class App extends Component {
                 <header className="App-header">
                     <span style={{paddingInlineEnd: "5em"}}>&nbsp;</span>
                     <span className="title">
-                        Wordle Plug In
+                        Wordle Helper
                     </span>
                     <Length
                         length={this.state.length}
